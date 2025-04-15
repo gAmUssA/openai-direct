@@ -1,20 +1,31 @@
-import java.lang.System.getenv
-import java.net.URI
-import java.net.http.HttpClient
-import java.net.http.HttpRequest
-import java.net.http.HttpResponse
-import java.nio.charset.StandardCharsets
+/*
+ * This implementation uses java.net.URL and java.net.HttpURLConnection which are available in the JVM.
+ * For true Kotlin Multiplatform compatibility, you would need to:
+ * 
+ * 1. Create an expect/actual declaration for HTTP client functionality:
+ *    - expect class HttpClient { ... }
+ *    - actual class HttpClient { ... } (platform-specific implementations)
+ * 
+ * 2. Use Kotlin's IO utilities from the stdlib where possible
+ * 
+ * 3. Consider using a multiplatform HTTP client library like Ktor Client
+ *    if more complex HTTP functionality is needed
+ */
+
+import java.net.URL
+import java.net.HttpURLConnection
 
 fun main() {
     // Read API key from environment variable for security
-    val apiKey = getenv("OPENAI_API_KEY")
+    val apiKey = System.getenv("OPENAI_API_KEY")
     if (apiKey.isNullOrBlank()) {
         System.err.println("[ERROR] Please set the OPENAI_API_KEY environment variable.")
         return
     }
 
-    val client = HttpClient.newBuilder().build()
-    val url = "https://api.openai.com/v1/chat/completions"
+    // Create URL in a way that's compatible with Kotlin Multiplatform
+    val urlString = "https://api.openai.com/v1/chat/completions"
+    val url = URL(urlString)
 
     // Minimal JSON payload for a chat completion request
     val payload = """
@@ -26,22 +37,33 @@ fun main() {
         }
     """.trimIndent()
 
-    val request = HttpRequest.newBuilder()
-        .uri(URI.create(url))
-        .header("Authorization", "Bearer $apiKey")
-        .header("Content-Type", "application/json")
-        .POST(HttpRequest.BodyPublishers.ofString(payload, StandardCharsets.UTF_8))
-        .build()
-
     try {
-        val response = client.send(request, HttpResponse.BodyHandlers.ofString())
-        if (response.statusCode() != 200) {
-            System.err.println("[ERROR] HTTP ${response.statusCode()}")
-            System.err.println(response.body())
+        val connection = url.openConnection() as HttpURLConnection
+        connection.requestMethod = "POST"
+        connection.setRequestProperty("Content-Type", "application/json")
+        connection.setRequestProperty("Authorization", "Bearer $apiKey")
+        connection.doOutput = true
+
+        // Write the payload to the request body
+        connection.outputStream.use { os ->
+            val input = payload.toByteArray(Charsets.UTF_8)
+            os.write(input, 0, input.size)
+        }
+
+        val responseCode = connection.responseCode
+
+        if (responseCode != 200) {
+            System.err.println("[ERROR] HTTP $responseCode")
+            connection.errorStream?.let { errorStream ->
+                val errorResponse = errorStream.bufferedReader().use { it.readText() }
+                System.err.println(errorResponse)
+            }
             return
         }
-        // Print the raw JSON response
-        println(response.body())
+
+        // Read and print the response
+        val response = connection.inputStream.bufferedReader().use { it.readText() }
+        println(response)
     } catch (e: Exception) {
         System.err.println("[ERROR] Exception during API call: ${e.message}")
     }

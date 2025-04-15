@@ -43,3 +43,4 @@ Thumbs.db
 # Gradle
 .gradle/
 build/
+bin
