@@ -1,0 +1,78 @@
+= OpenAI Direct API Call Example
+:toc:
+:icons: font
+
+This project demonstrates how to make a direct HTTP call to the OpenAI API using only standard Kotlin and Java libraries, *without* any frameworks like LangChain4j.
+
+== How to Run
+
+1. **Set your OpenAI API key** as an environment variable:
+
+    export OPENAI_API_KEY=sk-...
+
+2. **Build and run the script:**
+
+    ./gradlew run
+
+== What This Does
+
+- Makes a POST request to OpenAI's `/v1/chat/completions` endpoint, asking a question about airline loyalty programs.
+- Prints the raw JSON response to the console.
+
+== Using HTTPie and jq
+
+If you prefer using command-line tools, you can achieve the same functionality with HTTPie and jq:
+
+1. **Install the required tools** (if not already installed):
+
+    # For macOS
+    brew install httpie jq
+
+    # For Ubuntu/Debian
+    apt-get install httpie jq
+
+2. **Make the API call with HTTPie**:
+
+    export OPENAI_API_KEY=sk-...
+
+    http POST https://api.openai.com/v1/chat/completions \
+      "Authorization: Bearer $OPENAI_API_KEY" \
+      "Content-Type: application/json" \
+      model="gpt-3.5-turbo" \
+      messages:='[{"role": "user", "content": "What are the best ways to maximize airline loyalty program benefits?"}]'
+
+3. **Process the response with jq** (optional):
+
+    # To extract just the response content
+    http POST https://api.openai.com/v1/chat/completions \
+      "Authorization: Bearer $OPENAI_API_KEY" \
+      "Content-Type: application/json" \
+      model="gpt-3.5-turbo" \
+      messages:='[{"role": "user", "content": "What are the best ways to maximize airline loyalty program benefits?"}]' | \
+      jq '.choices[0].message.content'
+
+    # To pretty-print the entire response
+    http POST https://api.openai.com/v1/chat/completions \
+      "Authorization: Bearer $OPENAI_API_KEY" \
+      "Content-Type: application/json" \
+      model="gpt-3.5-turbo" \
+      messages:='[{"role": "user", "content": "What are the best ways to maximize airline loyalty program benefits?"}]' | \
+      jq '.'
+
+== Limitations of Direct API Calls
+
+- *Boilerplate*: You must manually build JSON, handle HTTP, and parse responses.
+- *No abstractions*: There's no type safety, retry logic, or error handling beyond what you write yourself.
+- *Missing features*: No built-in streaming, prompt management, or advanced integrations that frameworks like LangChain4j provide.
+- *Security*: You must manage API keys and secrets yourself.
+
+== Why Use a Framework?
+
+Frameworks like LangChain4j offer:
+- Higher-level abstractions for prompt/response handling
+- Built-in error handling, retries, and streaming
+- Easier integration with other tools, databases, and chains
+- More maintainable and readable code
+
+== For demonstration only!
+This script is intentionally minimal to highlight the *"naked"* nature of direct API calls.
