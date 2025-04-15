@@ -69,6 +69,7 @@ If you prefer using command-line tools, you can achieve the same functionality w
 == Why Use a Framework?
 
 Frameworks like LangChain4j offer:
+
 - Higher-level abstractions for prompt/response handling
 - Built-in error handling, retries, and streaming
 - Easier integration with other tools, databases, and chains
